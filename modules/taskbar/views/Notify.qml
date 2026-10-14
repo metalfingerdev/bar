@@ -1,5 +1,6 @@
 import QtQuick
 import qs.modules.taskbar
+import qs.modules.taskbar.services
 
 Item {
     implicitWidth: 360
@@ -17,7 +18,7 @@ Item {
             verticalAlignment: Text.AlignVCenter
 
             elide: Text.ElideRight
-            text: IslandState.data ?? ""
+            text: Notifier.summary
             color: "#f7f7f7"
             font.pixelSize: 15
         }

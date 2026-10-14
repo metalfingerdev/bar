@@ -4,7 +4,7 @@ import qs.modules.taskbar
 
 // Resting view: shown on hover (Peek) and when clicked (Pinned).
 Item {
-    implicitWidth: 300
+    implicitWidth: 360
     implicitHeight: 72
 
     SystemClock { id: clock; precision: SystemClock.Minutes }

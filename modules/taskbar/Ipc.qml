@@ -13,9 +13,9 @@ IpcHandler {
         if (e) IslandState.send(IslandState.Event.Open, e.view)
     }
 
-    function alert(name: string, text: string): void {
+    function alert(name: string): void {
         const e = Registry.byName(name)
-        if (e) IslandState.send(IslandState.Event.Alert, e.view, text)
+        if (e) IslandState.send(IslandState.Event.Alert, e.view)
     }
 
     function close(): void { IslandState.send(IslandState.Event.Close) }
@@ -25,7 +25,7 @@ IpcHandler {
     function space(on: bool): void { IslandState.space = on }
 
     function mode(name: string): void {
-        if (name === "island")     IslandState.mode = IslandState.Mode.Island
+        if (name === "pill")     IslandState.mode = IslandState.Mode.Pill
         else if (name === "notch") IslandState.mode = IslandState.Mode.Notch
     }
 

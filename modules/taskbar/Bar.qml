@@ -9,6 +9,7 @@ Scope {
 
     Ipc {}
     Triggers {}
+    // Debug{}
 
     // Reserves the exclusive zone for the collapsed handle. Never takes input.
     PanelWindow {

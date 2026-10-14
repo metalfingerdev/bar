@@ -8,8 +8,8 @@ Item {
     readonly property int handleW: 120     // collapsed bump (only when space is NOT reserved)
     readonly property int handleH: 4
 
-    // ---- appearance per mode: the only place that knows what Island vs Notch means ----
-    readonly property bool floating: IslandState.mode === IslandState.Mode.Island
+    // ---- appearance per mode: the only place that knows what Pill vs Notch means ----
+    readonly property bool floating: IslandState.mode === IslandState.Mode.Pill
     readonly property int topGap: floating ? 8 : 0          // Offset applied inside Bar.qml's hit area
     readonly property int reservedH: IslandState.compactHeight + topGap   // exclusive zone when space is on
 
