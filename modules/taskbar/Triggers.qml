@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import qs.modules.taskbar.services
+import qs.modules.services
 
 Scope {
     id: root
@@ -25,8 +25,15 @@ Scope {
 
     Connections {
         target: Notifier
-        function onReceived() {
-            IslandState.send(IslandState.Event.Alert, IslandState.View.Notify)
+        function onReceived(critical) {
+            if (!critical) {
+                IslandState.send(IslandState.Event.Alert, IslandState.View.Notify)
+                return
+            }
+            // Already showing the center? It's live, so nothing to do. Without this guard,
+            // Open on the same pinned view toggles it closed.
+            if (IslandState.pinned && IslandState.view === IslandState.View.Notify) return
+            IslandState.send(IslandState.Event.Open, IslandState.View.Notify)
         }
     }
 }

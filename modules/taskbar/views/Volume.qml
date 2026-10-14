@@ -1,6 +1,6 @@
 import QtQuick
 import qs.modules.taskbar
-import qs.modules.taskbar.services
+import qs.modules.services
 
 Meter {
     label:     Audio.muted ? "mute" : "vol"

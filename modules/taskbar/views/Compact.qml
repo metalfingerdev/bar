@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.modules.taskbar
-import qs.modules.taskbar.services
+import qs.modules.services
 
 // Always-on resting view. Clock/date, plus bars while music plays.
 Item {

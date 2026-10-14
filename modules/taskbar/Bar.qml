@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
 
+
 // Windows + raw input. Turns pointer/keyboard into events; knows nothing about views.
 Scope {
     id: root

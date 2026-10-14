@@ -12,7 +12,7 @@ QtObject {
     id: root
 
     enum Phase  { Collapsed, Peek, Pinned, Transient }
-    enum View   { Idle, Media, Notify, Compact, Dashboard, Volume, Brightness }
+    enum View   { Idle, Media, Notify, Compact, Dashboard, Volume, Brightness, Theme, Bluetooth, Launcher }
     enum Event  { HoverIn, HoverOut, Click, Outside, Escape, Open, Back, Alert, Expire, Close }
     enum Mode   { Pill, Notch }
     enum Widget { Clock, Date }
@@ -24,8 +24,8 @@ QtObject {
     property bool hovered: false                      // tracked in every phase
 
     // ---- config ----
-    property int mode: IslandState.Mode.Pill
-    property bool space: false                        // reserve screen space; rest shows the default view instead of the handle
+    property int mode: IslandState.Mode.Notch
+    property bool space: true                        // reserve screen space; rest shows the default view instead of the handle
     property int compactWidget: IslandState.Widget.Clock   // the default view's content
     readonly property int compactHeight: 28
     readonly property int settleMs: 2000          // Back -> Idle stays open this long, hover or not
