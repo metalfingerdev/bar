@@ -4,8 +4,28 @@ import qs.modules.services
 import qs.modules.taskbar
 
 // Transient: recent toasts. Pinned: everything, dismissable.
-Item {
+FocusScope {
     id: root
+
+    Component.onCompleted: root.forceActiveFocus()
+    onVisibleChanged: {
+        if (visible) root.forceActiveFocus()
+    }
+
+    property bool keyboardActive: false
+    readonly property bool engaged: keyboardActive
+
+    Keys.onPressed: (event) => {
+        keyboardActive = true
+            if (event.key === Qt.Key_Backspace ) {
+                IslandState.send(IslandState.Event.Back)
+                event.accepted = true
+            } else {
+                event.accepted = false
+            }
+    }
+
+    signal closeRequested
 
     readonly property bool pinned: IslandState.pinned
     readonly property var list: pinned ? Notifier.items : Notifier.items.filter(n => n.toast)
@@ -19,6 +39,18 @@ Item {
 
     implicitWidth: 380
     implicitHeight: headerH + bodyH + moreH + 8      // the island morphs to this
+
+    onRowsChanged: {
+        if (!pinned && rows.length === 0 && IslandState.view === IslandState.View.Notify) {
+            closeRequested()
+        }
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        enabled: !IslandState.keyboard
+        onClicked: IslandState.send(IslandState.Event.Open, IslandState.View.Notify)
+    }
 
     // ---- header (pinned only) ----
     Item {
@@ -41,7 +73,7 @@ Item {
             spacing: 8
 
             Pill { text: "clear"; onClicked: Notifier.dismissAll() }
-            Pill { text: "back";  onClicked: IslandState.send(IslandState.Event.Back) }
+            Pill { text: "back";  onClicked: IslandState.send(IslandState.openHome()) }
         }
     }
 
@@ -82,7 +114,7 @@ Item {
 
                     Column {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: root.width - 32 - 28 - 24 - (root.pinned ? 56 : 0)
+                        width: root.width - 120
 
                         Text {
                             width: parent.width
@@ -103,7 +135,6 @@ Item {
                     }
 
                     Pill {
-                        visible: root.pinned
                         anchors.verticalCenter: parent.verticalCenter
                         text: "x"
                         onClicked: Notifier.dismiss(modelData.id)

@@ -31,21 +31,29 @@ Scope {
 
         WlrLayershell.namespace: "quickshell:island"
         WlrLayershell.layer: WlrLayer.Top
-        WlrLayershell.keyboardFocus: IslandState.pinned ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        // OnDemand only hands over the keyboard after a click. Views that declare `keys: true`
+        // in Registry get Exclusive so typing works the instant they open.
+        WlrLayershell.keyboardFocus: IslandState.keyboard ? WlrKeyboardFocus.Exclusive
+                                   : IslandState.pinned   ? WlrKeyboardFocus.OnDemand
+                                                          : WlrKeyboardFocus.None
 
         // pinned: whole screen (catch outside clicks). otherwise: just the island.
         mask: Region { item: IslandState.pinned ? screenArea : hitArea }
 
+        // Not used for keyboard views: Exclusive focus already owns the keyboard, and the
+        // full-screen screenArea below still catches outside clicks. Leaving the grab on
+        // made the focus change to Exclusive fire onCleared -> Outside -> instant close.
         HyprlandFocusGrab {
             windows: [win]
-            active: IslandState.pinned
+            active: IslandState.pinned && !IslandState.keyboard
             onCleared: IslandState.send(IslandState.Event.Outside)
         }
 
         Item {
             id: screenArea
             anchors.fill: parent
-            focus: IslandState.pinned
+            // yields focus to the view when it wants the keyboard
+            focus: IslandState.pinned && !IslandState.keyboard
             Keys.onEscapePressed: IslandState.send(IslandState.Event.Escape)
 
             MouseArea {
@@ -55,7 +63,7 @@ Scope {
             }
         }
 
-        // Island's bounding box + padding container. 
+        // Island's bounding box + padding container.
         // Anchored permanently to top: 0 so expanding downward never causes the hit area
         // to leave a pointer resting near the top screen edge.
         Item {
@@ -71,7 +79,11 @@ Scope {
             // Height spans from the screen top through the gap offset down to the bottom padding
             height: (island.open ? island.topGap : 0) + island.height + pad
 
-            // z: -1 ensures controls and buttons inside views win click events
+            // Escape from a focused view bubbles up to here (screenArea no longer holds focus then)
+            Keys.onEscapePressed: IslandState.send(IslandState.Event.Escape)
+
+            // z: -1 ensures controls and buttons inside views win click events.
+            // Keyboard views aren't dismissed by a click on dead space; they use Escape/outside click.
             MouseArea {
                 anchors.fill: parent
                 z: -1

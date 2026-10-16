@@ -2,16 +2,23 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
+import qs.modules.taskbar
 
 FocusScope {
-    property var close: function() { }
+    id: launcherRoot
+
+    // ---- view contract with Island.qml (both optional) ----
+    signal closeRequested()
+    readonly property bool engaged: searchQuery.length > 0 || keyboardActive   // pauses the island timeout
+    property bool keyboardActive: false      // set by any key press, cleared when the mouse takes over
+
     property string searchQuery: ""
     property bool clickActivated: false
 
     // Local configuration fallbacks since qs.config is unavailable
     QtObject {
         id: config
-        property string font: "sans-serif"
+        property string font: "inter"
         property int fontSize: 14
         property color foreground: "#f7f7f7"
         property color bgLight: "#222222"
@@ -22,8 +29,19 @@ FocusScope {
 
     onIsActiveChanged: if (!isActive) clickActivated = false
 
-    implicitWidth: 600
-    implicitHeight: 600
+    implicitWidth: 500
+    implicitHeight: 500
+
+    function executeApp(entry) {
+        if (entry.runInTerminal) {
+            Quickshell.execDetached({
+                command: ["kitty", "-e"].concat(entry.command),
+                workingDirectory: entry.workingDirectory
+            })
+        } else {
+            entry.execute()
+        }
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -79,6 +97,15 @@ FocusScope {
                 color: config.foreground
                 focus: true
                 Keys.forwardTo: [appList]
+                Keys.onPressed: (event) => {
+                    keyboardActive = true
+                    if (event.key === Qt.Key_Backspace && text.length === 0) {
+                        IslandState.send(IslandState.Event.Back)
+                        event.accepted = true
+                    } else {
+                        event.accepted = false     // observe only; TextInput still handles the key
+                    }
+                }
                 onTextChanged: {
                     searchQuery = text
                     appList.searchBarKeyboardFocus = false
@@ -98,7 +125,7 @@ FocusScope {
                 cursorDelegate: Rectangle {
                     color: config.foreground
                     width: 1
-                    visible: isActive && (clickActivated || searchInput.text.length > 0)
+                    visible: isActive && (clickActivated || keyboardActive || searchInput.text.length > 0)
                     SequentialAnimation on opacity {
                         loops: Animation.Infinite
                         running: true
@@ -155,8 +182,8 @@ FocusScope {
 
             Keys.onReturnPressed: {
                 if (currentIndex >= 0 && currentItem) {
-                    currentItem.modelData.execute()
-                    close()
+                    executeApp(currentItem.modelData)
+                    closeRequested()
                 }
             }
 
@@ -222,14 +249,15 @@ FocusScope {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
-                        modelData.execute()
-                        close()
+                        executeApp(modelData)
+                        closeRequested()
                     }
                     onPositionChanged: (mouse) => {
                         var scenePos = mapToGlobal(mouse.x, mouse.y)
                         var last = appList.lastMouseScenePos
                         if (Math.abs(scenePos.x - last.x) > 0.5 || Math.abs(scenePos.y - last.y) > 0.5) {
                             appList.lastMouseScenePos = scenePos
+                            keyboardActive = false      // mouse took over
                             appList.currentIndex = index
                         }
                     }

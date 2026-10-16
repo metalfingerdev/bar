@@ -32,6 +32,11 @@ Item {
 
     onTargetChanged: swap.restart()
 
+    function syncEngaged() {
+        IslandState.send(loader.item?.engaged === true ? IslandState.Event.Engage
+                                                       : IslandState.Event.Release)
+    }
+
     SequentialAnimation {
         id: swap
         NumberAnimation { target: loader; property: "opacity"; to: 0; duration: root.shown === -1 ? 0 : 90 }
@@ -65,6 +70,23 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             active: root.shown !== -1
             source: root.shown === -1 ? "" : Registry.get(root.shown).url
+
+            onLoaded: {
+                // Views that want the keyboard get active focus as soon as they exist,
+                // no click needed. (The surface side lives in Bar.qml / IslandState.keyboard.)
+                if (Registry.wantsKeys(root.shown)) item.forceActiveFocus()
+                root.syncEngaged()
+            }
+        }
+
+        // ---- optional view contract (all members are optional) ----
+        //   property bool engaged   : true while the user is actively working in the view
+        //   signal closeRequested() : the view is done (e.g. an app was launched)
+        Connections {
+            target: loader.item
+            ignoreUnknownSignals: true
+            function onEngagedChanged()  { root.syncEngaged() }
+            function onCloseRequested()  { IslandState.send(IslandState.Event.Close) }
         }
     }
 }
