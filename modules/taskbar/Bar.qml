@@ -4,22 +4,16 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import QtQuick
 
+import qs.modules.taskbar
+
 Scope {
   id: root
-
-  // state
-  property int gap: 8
-  property int length: 256
-  property int bredth: 56
-  readonly property int screenHeight: 1080
-  readonly property int screenWidth: 1920
-
 
     PanelWindow {
         id: spacer
 
         anchors { top: true; left: true; right: true }
-        implicitHeight: gap + bredth
+        implicitHeight: State.space
         color: "transparent"
         mask: Region {}
     }
@@ -34,6 +28,8 @@ Scope {
 
         WlrLayershell.layer: WlrLayer.Top
 
-        Island{}
+        Island{
+            id: island
+        }
     }
 }
