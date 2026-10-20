@@ -1,4 +1,3 @@
-// Bar.qml
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -7,19 +6,18 @@ import QtQuick
 import qs.modules.taskbar
 
 Scope {
-  id: root
-
+    // Reserves screen space at the top. Fully click-through.
     PanelWindow {
-        id: spacer
-
+        visible: Engine.reserve > 0
         anchors { top: true; left: true; right: true }
-        implicitHeight: State.space
+        implicitHeight: Engine.reserve
         color: "transparent"
         mask: Region {}
     }
 
+    // Full-screen overlay; only the island itself is clickable.
     PanelWindow {
-        id: screen
+        id: overlay
 
         anchors { top: true; bottom: true; left: true; right: true }
         exclusionMode: ExclusionMode.Ignore
@@ -27,9 +25,17 @@ Scope {
         mask: Region { item: island }
 
         WlrLayershell.layer: WlrLayer.Top
+        WlrLayershell.keyboardFocus: Engine.keyboard ? WlrKeyboardFocus.OnDemand
+                                                     : WlrKeyboardFocus.None
 
-        Island{
-            id: island
+        // Outside clicks: while a view is pinned, a click anywhere else clears the grab -> Outside.
+        // (Not Hyprland? Swap this for a full-window backdrop MouseArea + mask while Engine.grabbing.)
+        HyprlandFocusGrab {
+            windows: [overlay]
+            active: Engine.grabbing
+            onCleared: Engine.send(Engine.Event.Outside)
         }
+
+        Island { id: island }
     }
 }

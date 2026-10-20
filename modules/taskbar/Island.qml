@@ -1,58 +1,86 @@
 import QtQuick
 import qs.modules.taskbar
 
+// The island is a pure projection of Engine: it shows Engine.view and reports
+// pointer input back as events. It owns no state-machine logic.
 Item {
-    id: container
+    id: root
 
-    x: ( screenWidth - length ) / 2
-    y: 0
+    readonly property real edgeMargin: 0
 
-    height: loader.item.implicitHeight + gap
-    width: loader.item.implicitWidth
+    // ---- size: follows the loaded view, remembers the last good size while the next one loads ----
+    property real contentW: 0
+    property real contentH: 0
 
-    
-    readonly property int target: State.View.Compact
-    readonly property bool open: target !== -1
-    readonly property bool length: open && State.item ? State.item.width : 0
-    property int shown: -1
-
-    Component.onCompleted: shown = target
-    function syncEngaged() {
-        State.send(loader.item?.enaged === true ? State.Event.Engage : State.Event.Release)
+    Binding {
+        target: root; property: "contentW"
+        value: loader.item ? loader.item.implicitWidth : 0
+        when: loader.item !== null
+        restoreMode: Binding.RestoreNone
+    }
+    Binding {
+        target: root; property: "contentH"
+        value: loader.item ? loader.item.implicitHeight : 0
+        when: loader.item !== null
+        restoreMode: Binding.RestoreNone
     }
 
+    width: contentW
+    height: contentH + Engine.gap
+    Behavior on width  { NumberAnimation { duration: Engine.morphMs; easing.type: Easing.OutCubic } }
+    Behavior on height { NumberAnimation { duration: Engine.morphMs; easing.type: Easing.OutCubic } }
+
+    // ---- position: screen centre, or centred on the click that opened the view (clamped to the window) ----
+    readonly property real wanted: Engine.anchorX >= 0 ? Engine.anchorX - width / 2
+                                                       : (parent.width - width) / 2
+    x: Math.max(edgeMargin, Math.min(parent.width - width - edgeMargin, wanted))
+    y: 0
+
+    function syncEngaged() {
+        Engine.send(loader.item?.engaged === true ? Engine.Event.Engage : Engine.Event.Release)
+    }
+
+    // ---- input -> events ----
+    Keys.onEscapePressed: Engine.send(Engine.Event.Escape)
+    focus: Engine.keyboard
 
     Rectangle {
-        id: island
-
-        anchors.top: parent.top
-        anchors.topMargin: gap
+        id: surface
         anchors.fill: parent
-
+        anchors.topMargin: Engine.gap
         radius: 8
         color: "black"
-        
+
+        HoverHandler {
+            onHoveredChanged: Engine.send(hovered ? Engine.Event.HoverIn : Engine.Event.HoverOut)
+        }
+
+        // Passive: clicks that a view's own MouseArea/Button accepts never reach this.
+        TapHandler {
+            acceptedButtons: Qt.LeftButton
+            onTapped: eventPoint => Engine.send(Engine.Event.Click, { x: eventPoint.scenePosition.x })
+        }
+        TapHandler {
+            acceptedButtons: Qt.RightButton
+            onTapped: Engine.send(Engine.Event.Back)
+        }
+
         Loader {
             id: loader
             anchors.centerIn: parent
-            active: container.shown !== -1
-            source: container.shown === -1 ? "" : Registry.get(container.shown).url
-            onLoaded: {
-                console.log("Island loaded:", loader.item)
-                container.syncEngaged()
-            }
-
             asynchronous: true
+            source: Registry.get(Engine.view)?.url ?? ""
+            onLoaded: root.syncEngaged()
         }
 
-        // ---- optional view contract (all members are optional) ----
-        //   property bool engaged   : true while the user is actively working in the view
+        // optional view contract (all members optional):
+        //   property bool engaged   : the user is actively working in the view
         //   signal closeRequested() : the view is done (e.g. an app was launched)
         Connections {
             target: loader.item
             ignoreUnknownSignals: true
-            function onEngagedChanged()  { container.syncEngaged() }
-            function onCloseRequested()  { State.send(State.Event.Close) }
+            function onEngagedChanged() { root.syncEngaged() }
+            function onCloseRequested() { Engine.send(Engine.Event.Close) }
         }
     }
 }

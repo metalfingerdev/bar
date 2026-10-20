@@ -7,7 +7,7 @@ import qs.modules.services
 Item {
     // The island morphs to this, so it grows when the bars appear.
     implicitWidth: Math.max(120, row.implicitWidth + 32)
-    implicitHeight: IslandState.compactHeight
+    implicitHeight: 48
 
     SystemClock { id: clock; precision: SystemClock.Minutes }
 
@@ -26,7 +26,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             color: "#f7f7f7"
             font.pixelSize: 13
-            text: IslandState.compactWidget === IslandState.Widget.Date
+            text: Engine.compactWidget === Engine.Widget.Date
                   ? Qt.formatDateTime(clock.date, "ddd d MMM")
                   : Qt.formatDateTime(clock.date, "HH:mm")
         }
